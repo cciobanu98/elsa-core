@@ -9,6 +9,7 @@ using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
 using Elsa.Builders;
 using Elsa.Consumers;
+using Elsa.Decorators;
 using Elsa.Expressions;
 using Elsa.HostedServices;
 using Elsa.Mapping;
@@ -27,6 +28,7 @@ using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
+using Polly;
 using Rebus.Handlers;
 using Rebus.ServiceProvider;
 
@@ -79,6 +81,12 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
             elsaOptions.AddMessageType<TMessage>();
+            return elsaOptions;
+        }
+
+        public static ElsaOptions UseResilientWorkflowContextManager(this ElsaOptions elsaOptions, IAsyncPolicy? loadContextPolicy, IAsyncPolicy? saveContextPolicy)
+        {
+            elsaOptions.Services.Decorate<IWorkflowContextManager>((service, sp) => new ResilientWorkflowContextManager(service, loadContextPolicy, saveContextPolicy));
             return elsaOptions;
         }
 
