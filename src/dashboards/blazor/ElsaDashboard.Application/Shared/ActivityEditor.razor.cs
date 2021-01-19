@@ -16,10 +16,10 @@ namespace ElsaDashboard.Application.Shared
         public Variables? Properties
         {
             private get => default;
-            set => _properties = value == null ? new Dictionary<string, ActivityProperty>() : value.Data.ToDictionary(x => x.Key, x => new ActivityProperty
+            set => _properties = value?.Data.ToDictionary(x => x.Key, x => new ActivityProperty
             {
                 Value = x.Value?.ToString() ?? ""
-            });
+            }) ?? new Dictionary<string, ActivityProperty>();
         }
 
         public Variables ReadProperties()

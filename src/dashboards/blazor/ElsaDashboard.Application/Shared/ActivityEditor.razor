@@ -5,7 +5,7 @@
 
             @foreach (var property in ActivityInfo.Properties)
             {
-                <TextFormElement  />
+                <TextFormElement PropertyInfo="property" @bind-Value="@_properties[property.Name].Value"  />
             }
         </div>
     </EditForm>
