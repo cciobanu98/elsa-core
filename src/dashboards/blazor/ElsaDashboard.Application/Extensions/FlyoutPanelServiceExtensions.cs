@@ -29,7 +29,8 @@ namespace ElsaDashboard.Application.Extensions
                 ContentComponentType = typeof(T),
                 Buttons = options.Buttons,
                 Parameters = options.Parameters,
-                Title = options.Title
+                Title = options.Title,
+                ContentComponentReference = options.ContentComponentReference
             });
     }
 }

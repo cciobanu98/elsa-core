@@ -179,8 +179,9 @@ namespace ElsaDashboard.Application.Shared
                 var index = 0;
                 builder.OpenComponent<Activity>(index++);
                 builder.AddAttribute(index++, nameof(Activity.Model), activityModel);
-                //builder.AddAttribute(index++, nameof(Activity.OnEditClick), EventCallbackFactory.Create(this, () => OnActivityEdit(activityModel)));
+                builder.AddAttribute(index++, nameof(Activity.OnEditClick), EventCallbackFactory.Create(this, () => OnActivityEdit(activityModel)));
                 builder.AddAttribute(index++, nameof(Activity.OnDeleteClick), EventCallbackFactory.Create(this, () => OnActivityDelete(activityModel)));
+                builder.AddAttribute(index++, nameof(Activity.OnClick), EventCallbackFactory.Create(this, () => OnActivityClick(activityModel)));
 
                 var displayDescriptor = activityModel.DisplayDescriptor;
 
@@ -207,8 +208,8 @@ namespace ElsaDashboard.Application.Shared
 
         private async Task OnAddActivityClick(string? sourceActivityId, string? targetActivityId, string? outcome) => await AddActivityInvoked.InvokeAsync(new AddActivityInvokedEventArgs(sourceActivityId, targetActivityId, outcome));
         private async Task OnActivityDelete(ActivityModel activityModel) => await DeleteActivityInvoked.InvokeAsync(new DeleteActivityInvokedEventArgs(activityModel));
-
-        //private async ValueTask OnActivityClick(MouseEventArgs e) => await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
+        private async Task OnActivityEdit(ActivityModel activityModel) => await EditActivityInvoked.InvokeAsync(new EditActivityInvokedEventArgs(activityModel));
+        private async Task OnActivityClick(ActivityModel activityModel) => await ActivitySelected.InvokeAsync(new ActivitySelectedEventArgs(activityModel));
         private async Task OnConnectionCreatedAsync(ConnectionModel connection) => await UpdateModelAsync(Model.AddConnection(connection));
     }
 }

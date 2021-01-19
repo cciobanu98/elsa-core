@@ -33,7 +33,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
         private BackgroundWorker BackgroundWorker { get; } = new();
         private string DisplayName => !string.IsNullOrWhiteSpace(WorkflowDefinition.DisplayName) ? WorkflowDefinition.DisplayName : !string.IsNullOrWhiteSpace(WorkflowDefinition.Name) ? WorkflowDefinition.Name : "Untitled";
-        private static TabItem[] Tabs => new[] {new TabItem("Designer"), new TabItem("DSL", "Dsl"), new TabItem("Settings")};
+        private static TabItem[] Tabs => new[] { new TabItem("Designer"), new TabItem("DSL", "Dsl"), new TabItem("Settings") };
         private TabItem CurrentTab { get; set; } = Tabs.First();
 
         protected override async Task OnInitializedAsync()
@@ -111,7 +111,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
                 Outcomes = descriptor.Outcomes
             };
         }
-        
+
         private async Task AddActivityAsync(ActivityInfo activityInfo, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
             outcome ??= "Done";
@@ -132,8 +132,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
                 if (existingConnection != null)
                 {
-                    model = model with {Connections = model.Connections.Remove(existingConnection)};
-                    var replacementConnection = existingConnection with {SourceId = activity.ActivityId};
+                    model = model with { Connections = model.Connections.Remove(existingConnection) };
+                    var replacementConnection = existingConnection with { SourceId = activity.ActivityId };
                     model.AddConnection(replacementConnection);
                 }
                 else
@@ -148,8 +148,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
                 if (existingConnection != null)
                 {
-                    model = model with {Connections = model.Connections.Remove(existingConnection)};
-                    var replacementConnection = existingConnection with {TargetId = activity.ActivityId};
+                    model = model with { Connections = model.Connections.Remove(existingConnection) };
+                    var replacementConnection = existingConnection with { TargetId = activity.ActivityId };
                     model = model.AddConnection(replacementConnection);
 
                     var connection = new ConnectionModel(activity.ActivityId, existingConnection.TargetId, outcome);
@@ -163,14 +163,21 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
             }
 
             await UpdateWorkflowModelAsync(model);
-            await FlyoutPanelService.HideAsync();
+            await ClosePanelAsync();
+        }
+
+        private async Task UpdateActivityAsync(ActivityModel activityModel, Variables properties)
+        {
+            var model = WorkflowModel;
+            await UpdateWorkflowModelAsync(model);
+            await ClosePanelAsync();
         }
 
         private async Task RemoveActivityAsync(ActivityModel activityModel)
         {
             var incomingConnections = WorkflowModel.GetInboundConnections(activityModel.ActivityId).ToList();
             var outgoingConnections = WorkflowModel.GetOutboundConnections(activityModel.ActivityId).ToList();
-            
+
             // Remove activity (will also remove its connections).
             var model = WorkflowModel.RemoveActivity(activityModel);
 
@@ -180,7 +187,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
                 var incomingActivity = model.FindActivity(incomingConnection.SourceId);
                 var outgoingConnection = outgoingConnections.FirstOrDefault(x => x.Outcome == incomingConnection.Outcome);
 
-                if (outgoingConnection != null) 
+                if (outgoingConnection != null)
                     model = model.AddConnection(incomingActivity.ActivityId, outgoingConnection.TargetId, incomingConnection.Outcome);
             }
 
@@ -196,13 +203,37 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         }
 
         private async Task ClosePanelAsync() => await FlyoutPanelService.HideAsync();
-        
+
         private async Task ShowActivityPickerAsync(string? sourceActivityId, string? targetActivityId, string? outcome)
         {
             await FlyoutPanelService.ShowAsync<ActivityPicker>(
                 "Activities",
-                new {ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, sourceActivityId, targetActivityId, outcome))},
+                new { ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, sourceActivityId, targetActivityId, outcome)) },
                 ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()));
+        }
+
+        private async Task ShowActivityEditorAsync(ActivityModel activityModel)
+        {
+            var activityDescriptor = ActivityDescriptors[activityModel.Type];
+            ActivityEditor activityEditor = default!;
+
+            activityModel.Properties.Set("text", "Hello World");
+            
+            await FlyoutPanelService.ShowAsync<ActivityEditor>(new FlyoutPanelOptions
+            {
+                Title = activityDescriptor.DisplayName,
+                Parameters = new
+                {
+                    ActivityInfo = activityDescriptor,
+                    Properties = activityModel.Properties
+                }.ToDictionary(),
+                ContentComponentReference = component => activityEditor = (ActivityEditor) component,
+                Buttons = new[]
+                {
+                    ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()),
+                    ButtonDescriptor.Create("OK", _ => UpdateActivityAsync(activityModel, activityEditor.ReadProperties()), true)
+                }
+            });
         }
 
         private void StartBackgroundWorker()
@@ -215,37 +246,23 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         private async Task OnWorkflowChanged(WorkflowModelChangedEventArgs e) => await UpdateWorkflowModelAsync(e.WorkflowModel);
         private async Task OnAddActivityInvoked(AddActivityInvokedEventArgs e) => await ShowActivityPickerAsync(e.SourceActivityId, e.TargetActivityId, e.Outcome);
         private async Task OnDeleteActivityInvoked(DeleteActivityInvokedEventArgs e) => await RemoveActivityAsync(e.ActivityModel);
+        private async Task OnEditActivityInvoked(EditActivityInvokedEventArgs e) => await ShowActivityEditorAsync(e.ActivityModel);
+        private async Task OnActivitySelected(ActivitySelectedEventArgs e) => await ShowActivityEditorAsync(e.ActivityModel);
 
-        private async Task OnEditActivityInvoked(EditActivityInvokedEventArgs e)
-        {
-            //var activityInfo = Model.
-            
-            // await FlyoutPanelService.ShowAsync<ActivityEditor>(
-            // activityInfo.DisplayName,
-            // new {ActivityInfo = activityInfo},
-            // ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
-            // ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
-        }
-        
-        private async Task OnActivitySelected(ActivitySelectedEventArgs e)
-        {
-            
-        }
-        
         private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
             var activityInfo = e.ActivityInfo;
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
                 activityInfo.DisplayName,
-                new {ActivityInfo = activityInfo},
+                new { ActivityInfo = activityInfo },
                 ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
                 ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
         }
 
         private async Task OnSettingsChanged()
         {
-            await BackgroundWorker.ScheduleTask(SaveWorkflowAsync); 
+            await BackgroundWorker.ScheduleTask(SaveWorkflowAsync);
         }
     }
 }

@@ -16,6 +16,8 @@ module.exports = {
         require('@tailwindcss/ui')({
             layout: 'sidebar',
         }),
-        require('@tailwindcss/forms')
+        require('@tailwindcss/forms'),
+        require('@tailwindcss/typography'),
+        require('@tailwindcss/aspect-ratio')
     ],
 };

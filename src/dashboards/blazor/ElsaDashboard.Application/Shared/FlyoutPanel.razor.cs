@@ -28,12 +28,15 @@ namespace ElsaDashboard.Application.Shared
             {
                 Content = builder =>
                 {
-                    builder.OpenComponent(0, options.ContentComponentType);
-
                     var i = 0;
+                    builder.OpenComponent(i++, options.ContentComponentType);
+                    
                     foreach (var (name, value) in options.Parameters)
                         builder.AddAttribute(i++, name, value);
 
+                    if(options.ContentComponentReference != null)
+                        builder.AddComponentReferenceCapture(i++, options.ContentComponentReference);
+                    
                     builder.CloseComponent();
                 };
 

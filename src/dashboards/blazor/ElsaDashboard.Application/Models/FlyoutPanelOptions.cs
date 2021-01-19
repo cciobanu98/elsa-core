@@ -11,5 +11,6 @@ namespace ElsaDashboard.Application.Models
         public ICollection<ButtonDescriptor> Buttons { get; set; } = new List<ButtonDescriptor>();
         public string? Title { get; set; }
         public IDictionary<string, object?> Parameters { get; set; } = new Dictionary<string, object?>();
+        public Action<object>? ContentComponentReference { get; set; }
     }
 }
